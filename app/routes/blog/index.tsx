@@ -1,5 +1,5 @@
 import type { Route } from "./+types";
-import type { PostMeta } from "~/types";
+import type { PostMeta, StrapiPost, StrapiResponse } from "~/types";
 import { useState } from "react";
 
 //components
@@ -9,13 +9,24 @@ import PostFilter from "~/components/PostFilter";
 
 export async function loader({
   request,
-}: Route.LoaderArgs): Promise<{ posts: [PostMeta] }> {
-  const url = new URL("/posts-meta.json", request.url);
-  const res = await fetch(url.href);
+}: Route.LoaderArgs): Promise<{ posts: Array<PostMeta> }> {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/posts?populate=*`);
 
   if (!res.ok) throw new Error("There was an error trying to fetch the data");
 
-  const data = await res.json();
+  const json: StrapiResponse<StrapiPost> = await res.json();
+
+  const data: Array<PostMeta> = json.data.map((item) => ({
+    id: item.id,
+    documentId: item.documentId,
+    slug: item.slug,
+    title: item.title,
+    excerpt: item.excerpt,
+    date: item.date,
+    image: item.image?.url
+      ? `${import.meta.env.VITE_STRAPI_URL}${item.image.url}`
+      : "/images/no-image.png",
+  }));
 
   //sort data by date
   data.sort((a: PostMeta, b: PostMeta) => {

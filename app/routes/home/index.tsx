@@ -3,8 +3,10 @@ import Hero from "~/components/Hero";
 import FeaturedProjects from "~/components/FeaturedProjects";
 import AboutPreview from "~/components/AboutPreview";
 import LatestPosts from "~/components/LatestPosts";
+import type { StrapiProject, StrapiResponse, StrapiPost } from "~/types";
 
 import type { PostMeta, Project } from "~/types";
+import { body } from "framer-motion/client";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -20,8 +22,8 @@ export async function loader({ request }: Route.LoaderArgs): Promise<{
   const postsURL = new URL(request.url);
 
   const [projectsRes, postsRes] = await Promise.all([
-    fetch(`${import.meta.env.VITE_API_URL}/projects`),
-    fetch(new URL("/posts-meta.json", postsURL)),
+    fetch(`${import.meta.env.VITE_API_URL}/projects?populate=*`),
+    fetch(`${import.meta.env.VITE_API_URL}/posts?populate=*`),
   ]);
 
   // const res = await fetch(`${import.meta.env.VITE_API_URL}/projects`);
@@ -30,12 +32,39 @@ export async function loader({ request }: Route.LoaderArgs): Promise<{
   if (!projectsRes.ok || !postsRes.ok)
     throw new Error("Something went wrong trying to fetch the data");
 
-  const [projects, posts] = await Promise.all([
+  const [projectsJson, postsJson] = await Promise.all([
     projectsRes.json(),
     postsRes.json(),
   ]);
 
-  //const projects : Array<Project> = await res.json();
+  const projects: Array<Project> = projectsJson.data.map(
+    (item: StrapiProject) => ({
+      id: item.id,
+      documentId: item.documentId,
+      title: item.title,
+      description: item.description,
+      image: item.image?.url
+        ? `${import.meta.env.VITE_STRAPI_URL}${item.image.url}`
+        : "/images/no-image.png",
+      url: item.url,
+      date: item.date,
+      category: item.category,
+      featured: item.featured,
+    })
+  );
+
+  const posts: Array<PostMeta> = postsJson.data.map((item: StrapiPost) => ({
+    id: item.id,
+    documentId: item.documentId,
+    title: item.title,
+    slug: item.slug,
+    excerpt: item.excerpt,
+    date: item.date,
+    body: item.body,
+    image: item.image
+      ? `${import.meta.env.VITE_STRAPI_URL}${item.image?.url}`
+      : "/images/no-image.png",
+  }));
 
   //declare a limit of how many posts we want
   const postLimit = 3;

@@ -1,64 +1,86 @@
 import type { Route } from "./+types/details";
-import type { Project } from "~/types";
+import type {
+  SingleProjectStrapiResponse,
+  StrapiProject,
+  Project,
+} from "~/types";
 
 import { Link } from "react-router";
 import { FaArrowLeft } from "react-icons/fa";
 
+export async function loader({
+  request,
+  params,
+}: Route.LoaderArgs): Promise<Project> {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/projects/${params.documentId}?populate=*`
+  );
+  if (!res.ok)
+    throw new Response("error trying to fetch data", { status: 404 });
 
-export async function loader({request, params} : Route.LoaderArgs) : Promise<Project> {
+  const item: SingleProjectStrapiResponse<StrapiProject> = await res.json();
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/projects/${params.id}`);
-    if(!res.ok) throw new Response("error trying to fetch data", {status: 404})
-    
-    const project: Project = await res.json();
-    return project
+  const project = {
+    id: item.data.id,
+    documentId: item.data.documentId,
+    title: item.data.title,
+    description: item.data.description,
+    image: item.data.image?.url
+      ? `${import.meta.env.VITE_STRAPI_URL}${item.data.image.url}`
+      : "/images/no-image.png",
+    url: item.data.url,
+    date: item.data.date,
+    category: item.data.category,
+    featured: item.data.featured,
+  };
+
+  return project;
 }
 
+const ProjectDetailsPage = ({ loaderData }: Route.ComponentProps) => {
+  const project = loaderData as Project;
+  console.log(project);
 
-const ProjectDetailsPage = ({ loaderData } : Route.ComponentProps ) => {
+  return (
+    <>
+      <Link
+        to="/projects"
+        className="flex items-center text-blue-400 hover:text-blue-500"
+      >
+        <FaArrowLeft className="mr-2" />
+        Back to Projects
+      </Link>
 
-    const project = loaderData as Project;
-    console.log(project)
+      <div className="grid gap-8 md:grid-cols-2 items-start">
+        <div>
+          <img
+            src={project.image}
+            alt={project.title}
+            className="w-full rounded-lg shadow-md"
+          />
+        </div>
 
-    return (
-        <>
-            <Link to='/projects'
-            className="flex items-center text-blue-400 hover:text-blue-500">
-            <FaArrowLeft className="mr-2"/>
-             Back to Projects
-            </Link>
+        <div>
+          <h1 className="text-3xl font-bold text-blue-400 mb-4">
+            {project.title}
+          </h1>
+          <p className="text-gray-300 text-sm mb-4">
+            {new Date(project.date).toLocaleDateString()} | {project.category}
+          </p>
 
-            <div className="grid gap-8 md:grid-cols-2 items-start">
-
-                <div>
-                     <img
-                        src={project.image}
-                        alt={project.title}
-                        className="w-full rounded-lg shadow-md"/>
-                </div>
-
-
-                <div>
-                    <h1 className="text-3xl font-bold text-blue-400 mb-4">
-                    {project.title}
-                    </h1>
-                    <p className="text-gray-300 text-sm mb-4">
-                    {new Date(project.date).toLocaleDateString()} | {project.category}
-                    </p>
-
-                    <p className="text-gray-200 mb-6">{project.description}</p>
-                    <a href={project.url} target="_blank" className="inline-block text-white bg-blue-600
-                     hover:bg-blue-700 px-6 py-2 rounded transition">
-                        Visit the website
-                        </a>
-            </div>
-               
-            </div>
-
-            
-        </>
-    )
-}
-
+          <p className="text-gray-200 mb-6">{project.description}</p>
+          <a
+            href={project.url}
+            target="_blank"
+            className="inline-block text-white bg-blue-600
+                     hover:bg-blue-700 px-6 py-2 rounded transition"
+          >
+            Visit the website
+          </a>
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default ProjectDetailsPage;

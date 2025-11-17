@@ -1,39 +1,48 @@
 import ReactMarkDown from "react-markdown";
 import type { Route } from "./+types/details";
-import type { PostMeta } from "~/types";
+import type { PostMeta, StrapiResponse, StrapiPost } from "~/types";
 import { Link } from "react-router";
 
 export async function loader({
   request,
   params,
-}: Route.LoaderArgs): Promise<{ postMeta: PostMeta; markdown: string }> {
+}: Route.LoaderArgs): Promise<{ postMeta: PostMeta }> {
   const { slug } = params;
 
-  //getting url to fetch from
-  const url = new URL("/posts-meta.json", request.url);
   //fetching all data from this resource
-  const res = await fetch(url);
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/posts?filters[slug][$eq]=${slug}&populate=*`
+  );
   if (!res.ok) throw new Error("There was an error trying to fetch the data");
 
-  const allData: Array<PostMeta> = await res.json();
+  const json: StrapiResponse<StrapiPost> = await res.json();
 
   //getting the PostMeta for this post
-  const postMeta = allData.find((meta) => meta.slug === slug) as PostMeta;
+  const post = await json.data[0];
+
+  const postMeta = {
+    id: post.id,
+    documentId: post.documentId,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    body: post.body,
+    date: post.date,
+    image: post.image
+      ? `${import.meta.env.VITE_STRAPI_URL}${post.image?.url}`
+      : "/images/no-image.png",
+  };
 
   //throw response in case the postMeta is not found
   if (!postMeta) throw new Response("Not found", { status: 404 });
 
-  //getting the markdown for this specific post
-  const markdown = await import(`../../posts/${slug}.md?raw`);
-
   return {
     postMeta,
-    markdown: markdown.default,
   };
 }
 
 const BlogPostDetailsPage = ({ loaderData }: Route.ComponentProps) => {
-  const { postMeta, markdown } = loaderData;
+  const { postMeta } = loaderData;
 
   return (
     <div className="max-w-3xl bg-gray-900 mx-auto px-8 py-10 mt-10">
@@ -42,8 +51,14 @@ const BlogPostDetailsPage = ({ loaderData }: Route.ComponentProps) => {
         {new Date(postMeta.date).toDateString()}
       </p>
 
+      <img
+        src={postMeta.image}
+        alt={postMeta.slug}
+        className="w-full h-64 rounded object-cover mb-8"
+      />
+
       <div className="prose prose-invert max-w-none mb-12">
-        <ReactMarkDown>{markdown}</ReactMarkDown>
+        <ReactMarkDown>{postMeta.body}</ReactMarkDown>
       </div>
 
       <Link

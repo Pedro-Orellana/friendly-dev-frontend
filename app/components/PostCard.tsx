@@ -9,6 +9,12 @@ const PostCard = ({ post }: { post: PostMeta }) => {
         {new Date(post.date).toDateString()}
       </p>
 
+      <img
+        src={post.image}
+        alt={post.slug}
+        className="w-full h-48 rounded object-cover mt-4"
+      />
+
       <p className="text-white mt-4 mb-6">{post.excerpt}</p>
 
       <Link
