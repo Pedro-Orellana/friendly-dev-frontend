@@ -28,9 +28,7 @@ export async function loader({
     excerpt: post.excerpt,
     body: post.body,
     date: post.date,
-    image: post.image
-      ? `${import.meta.env.VITE_STRAPI_URL}${post.image?.url}`
-      : "/images/no-image.png",
+    image: post.image ? `${post.image?.url}` : "/images/no-image.png",
   };
 
   //throw response in case the postMeta is not found
