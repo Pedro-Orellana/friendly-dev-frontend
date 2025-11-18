@@ -26,7 +26,7 @@ export async function loader({
     title: item.data.title,
     description: item.data.description,
     image: item.data.image?.url
-      ? `${import.meta.env.VITE_STRAPI_URL}${item.data.image.url}`
+      ? `${item.data.image.url}`
       : "/images/no-image.png",
     url: item.data.url,
     date: item.data.date,

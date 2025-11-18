@@ -43,9 +43,7 @@ export async function loader({ request }: Route.LoaderArgs): Promise<{
       documentId: item.documentId,
       title: item.title,
       description: item.description,
-      image: item.image?.url
-        ? `${import.meta.env.VITE_STRAPI_URL}${item.image.url}`
-        : "/images/no-image.png",
+      image: item.image?.url ? `${item.image.url}` : "/images/no-image.png",
       url: item.url,
       date: item.date,
       category: item.category,
@@ -61,9 +59,7 @@ export async function loader({ request }: Route.LoaderArgs): Promise<{
     excerpt: item.excerpt,
     date: item.date,
     body: item.body,
-    image: item.image
-      ? `${import.meta.env.VITE_STRAPI_URL}${item.image?.url}`
-      : "/images/no-image.png",
+    image: item.image ? `${item.image?.url}` : "/images/no-image.png",
   }));
 
   //declare a limit of how many posts we want
